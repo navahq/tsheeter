@@ -18,7 +18,8 @@ defmodule Tsheeter.MixProject do
   defp releases() do
     [
       tsheeter: [
-        include_executables_for: [:unix]
+        include_executables_for: [:unix],
+        steps: [:assemble, :tar]
       ]
     ]
   end
