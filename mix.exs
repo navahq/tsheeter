@@ -55,7 +55,6 @@ defmodule Tsheeter.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:git_hooks, "~> 0.4.0", only: [:test, :dev], runtime: false},
       {:slack, "~> 0.23.2"}
     ]
   end
