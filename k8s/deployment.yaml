@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tsheeter
-        image: dgoeke/tsheeter:0.0.1
+        image: <IMAGE>
         ports:
         - containerPort: 4000
         env:

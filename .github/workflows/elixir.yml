@@ -1,7 +1,11 @@
-on: push
+on:
+  push:
+    branches:
+      - master
 
 jobs:
-  verify:
+  build:
+    name: Build, Push, Deploy
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -62,3 +66,32 @@ jobs:
       - run: mix compile --warnings-as-errors
       - run: mix format --check-formatted
       - run: mix test
+
+      - name: Build container image
+        run: docker build -t dgoeke/tsheeter:$(echo $GITHUB_SHA | head -c7) .
+
+      - name: Docker Login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+
+      - name: Push image to Docker Hub
+        run: docker push dgoeke/tsheeter
+
+      - name: Update deployment file
+        run: TAG=$(echo $GITHUB_SHA | head -c7) && sed -i 's|<IMAGE>|dgoeke/tsheeter:'${TAG}'|' $GITHUB_WORKSPACE/k8s/deployment.yaml
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Save DigitalOcean kubeconfig
+        run: doctl kubernetes cluster kubeconfig save dg-k8s
+
+      - name: Deploy to DigitalOcean Kubernetes
+        run: kubectl apply -f $GITHUB_WORKSPACE/k8s/deployment.yaml
+
+      # - name: Verify deployment
+      #   run: kubectl rollout status deployment/static-example
