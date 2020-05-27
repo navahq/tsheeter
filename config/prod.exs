@@ -17,3 +17,8 @@ config :tsheeter, TsheeterWeb.Endpoint,
 config :logger, level: :info
 
 config :tsheeter, TsheeterWeb.Endpoint, server: true
+
+config :tsheeter, Tsheeter.Repo,
+  ssl: true,
+  show_sensitive_data_on_connection_error: false,
+  pool_size: 10
