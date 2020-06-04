@@ -19,6 +19,12 @@ defmodule TsheeterWeb.Router do
     get "/", PageController, :index
   end
 
+  scope "/slack", TsheeterWeb do
+    pipe_through :api
+    post "/", SlackController, :interact
+    post "/event", SlackController, :event
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", TsheeterWeb do
   #   pipe_through :api
