@@ -9,11 +9,18 @@ defmodule TsheeterWeb.SlackController do
     json(conn, %{text: "Hello world!", response_type: "ephemeral"})
   end
 
-  def event(conn, %{"token" => @verify_token, "challenge" => challenge, "type" => "url_verification"}) do
+  def event(conn, %{
+        "token" => @verify_token,
+        "challenge" => challenge,
+        "type" => "url_verification"
+      }) do
     text(conn, challenge)
   end
 
-  def event(conn, %{"token" => @verify_token, "event" => %{"type" => "app_home_opened", "tab" => "home", "user" => user_id}}) do
+  def event(conn, %{
+        "token" => @verify_token,
+        "event" => %{"type" => "app_home_opened", "tab" => "home", "user" => user_id}
+      }) do
     request = %{
       type: :home,
       title: %{
@@ -28,7 +35,7 @@ defmodule TsheeterWeb.SlackController do
             text: "Hello world!"
           }
         }
-      ],
+      ]
     }
 
     Slack.Web.Views.publish(@bot_token, user_id, Jason.encode!(request))
@@ -38,6 +45,7 @@ defmodule TsheeterWeb.SlackController do
   end
 
   defp check_error(%{"ok" => true} = resp, _req), do: resp
+
   defp check_error(%{"ok" => false} = resp, req) do
     req = Jason.encode!(req, pretty: true)
     resp = Jason.encode!(resp, pretty: true)
