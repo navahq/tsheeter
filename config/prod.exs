@@ -22,3 +22,15 @@ config :tsheeter, Tsheeter.Repo,
   ssl: true,
   show_sensitive_data_on_connection_error: false,
   pool_size: 10
+
+config :libcluster,
+  topologies: [
+    k8s: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes.DNS,
+      config: [
+        service: "tsheeter",
+        application_name: "tsheeter",
+        polling_interval: 3_000
+      ]
+    ]
+  ]
