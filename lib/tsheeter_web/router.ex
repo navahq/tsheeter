@@ -1,7 +1,6 @@
 defmodule TsheeterWeb.Router do
   use TsheeterWeb, :router
   import Phoenix.LiveDashboard.Router
-  import Plug.BasicAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -15,18 +14,10 @@ defmodule TsheeterWeb.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :admins_only do
-    plug :basic_auth, Application.fetch_env!(:tsheeter, :basic_auth)
-  end
-
   scope "/", TsheeterWeb do
     pipe_through :browser
 
     get "/", PageController, :index
-  end
-
-  scope "/" do
-    pipe_through [:browser, :admins_only]
     live_dashboard "/dashboard", metrics: TsheeterWeb.Telemetry
   end
 

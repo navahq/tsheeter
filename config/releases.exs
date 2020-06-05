@@ -38,7 +38,3 @@ admin_password =
     raise """
     environment variable ADMIN_PASSWORD is missing.
     """
-
-config :tsheeter, :basic_auth,
-  username: admin_username,
-  password: admin_password

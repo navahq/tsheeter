@@ -52,25 +52,3 @@ config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
-
-config :libcluster,
-  topologies: [
-    epmd: [
-      strategy: Cluster.Strategy.Epmd,
-      config: [
-        hosts:
-          with {:ok, names} <- :net_adm.names(),
-               {:ok, host} <- :inet.gethostname() do
-            names
-            |> Enum.map(fn {name, _} -> :"#{name}@#{host}" end)
-            |> Enum.reject(fn e -> is_nil(e) end)
-          else
-            _ -> []
-          end
-      ]
-    ]
-  ]
-
-config :tsheeter, :basic_auth,
-  username: "admin",
-  password: "admin"

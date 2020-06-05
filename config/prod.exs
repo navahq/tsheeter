@@ -22,22 +22,3 @@ config :tsheeter, Tsheeter.Repo,
   ssl: true,
   show_sensitive_data_on_connection_error: false,
   pool_size: 10
-
-config :libcluster,
-  topologies: [
-    k8s: [
-      strategy: Elixir.Cluster.Strategy.Kubernetes,
-      config: [
-        kubernetes_node_basename: "tsheeter",
-        kubernetes_selector: "app=tsheeter",
-        kubernetes_ip_lookup_mode: :pods,
-        polling_interval: 3_000
-      ]
-    ]
-  ]
-
-# these are overridden by env vars in releases.exs, but
-# need to be defined for `mix compile`
-config :tsheeter, :basic_auth,
-  username: "",
-  password: ""
