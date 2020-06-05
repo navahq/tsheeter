@@ -23,6 +23,8 @@ spec:
         env:
         - name: PORT
           value: "4000"
+        - name: POOL_SIZE
+          value: "5"
         - name: MY_POD_IP
           valueFrom:
             fieldRef:
