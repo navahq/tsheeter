@@ -5,7 +5,7 @@ defmodule TsheeterWeb.SlackController do
   @verify_token System.get_env("SLACK_VERIFICATION_TOKEN")
   @bot_token System.get_env("SLACK_BOT_TOKEN")
 
-  plug :verify_token when action in [:event]
+  plug :verify_token when action in [:event, :interact]
 
   defp verify_token(conn = %{body_params: %{"token" => @verify_token}}, _opts), do: conn
   defp verify_token(conn, _opts) do

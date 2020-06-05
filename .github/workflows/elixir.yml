@@ -64,7 +64,6 @@ jobs:
 
       - run: mix clean
       - run: mix compile
-      - run: mix format --check-formatted
       - run: mix test
 
       - name: Build container image
