@@ -36,6 +36,8 @@ config :libcluster,
     ]
   ]
 
+# these are overridden by env vars in releases.exs, but
+# need to be defined for `mix compile`
 config :tsheeter, :basic_auth,
-  username: System.get_env("ADMIN_USERNAME"),
-  password: System.get_env("ADMIN_PASSWORD")
+  username: "",
+  password: ""

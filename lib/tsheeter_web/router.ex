@@ -16,7 +16,7 @@ defmodule TsheeterWeb.Router do
   end
 
   pipeline :admins_only do
-    plug :basic_auth, Application.compile_env!(:tsheeter, :basic_auth)
+    plug :basic_auth, Application.fetch_env!(:tsheeter, :basic_auth)
   end
 
   scope "/", TsheeterWeb do

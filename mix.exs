@@ -19,7 +19,8 @@ defmodule Tsheeter.MixProject do
     [
       tsheeter: [
         include_executables_for: [:unix],
-        steps: [:assemble, :tar]
+        steps: [:assemble, :tar],
+        validate_compile_env: false
       ]
     ]
   end
