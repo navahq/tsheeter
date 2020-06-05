@@ -5,6 +5,16 @@ defmodule TsheeterWeb.SlackController do
   @verify_token System.get_env("SLACK_VERIFICATION_TOKEN")
   @bot_token System.get_env("SLACK_BOT_TOKEN")
 
+  plug :verify_token when action in [:event]
+
+  defp verify_token(conn = %{body_params: %{"token" => @verify_token}}, _opts), do: conn
+  defp verify_token(conn, _opts) do
+    conn
+    |> put_status(401)
+    |> text("Unauthorized")
+    |> halt()
+  end
+
   def interact(conn, _params = %{"payload" => %{"callback_id" => "configure"}}) do
     json(conn, %{text: "Hello world!", response_type: "ephemeral"})
   end
@@ -44,6 +54,10 @@ defmodule TsheeterWeb.SlackController do
     text(conn, "OK")
   end
 
+  def event(conn, %{"token" => @verify_token}) do
+    text(conn, "OK")
+  end
+
   defp check_error(%{"ok" => true} = resp, _req), do: resp
 
   defp check_error(%{"ok" => false} = resp, req) do
@@ -51,9 +65,5 @@ defmodule TsheeterWeb.SlackController do
     resp = Jason.encode!(resp, pretty: true)
     Logger.info("[request] #{req}")
     Logger.error("[response] #{resp}")
-  end
-
-  def event(conn, %{"token" => @verify_token}) do
-    text(conn, "OK")
   end
 end
