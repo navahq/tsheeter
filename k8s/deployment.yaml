@@ -22,10 +22,6 @@ spec:
         env:
         - name: PORT
           value: "4000"
-        - name: NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         - name: MY_POD_IP
           valueFrom:
             fieldRef:
