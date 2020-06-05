@@ -18,7 +18,8 @@ spec:
       - name: tsheeter
         image: <IMAGE>
         ports:
-        - containerPort: 4000
+        - name: main-port
+          containerPort: 4000
         env:
         - name: PORT
           value: "4000"
@@ -32,4 +33,16 @@ spec:
           value: tsheeter@$(MY_POD_IP)
         envFrom:
         - secretRef:
-            name: tsheeter
+              name: tsheeter
+        livenessProbe:
+          httpGet:
+            path: /
+            port: main-port
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /
+            port: main-port
+          failureThreshold: 30
+          periodSeconds: 3
