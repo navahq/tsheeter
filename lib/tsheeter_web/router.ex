@@ -3,9 +3,6 @@ defmodule TsheeterWeb.Router do
   import Phoenix.LiveDashboard.Router
   import Plug.BasicAuth
 
-  @admin_username System.get_env("ADMIN_USERNAME")
-  @admin_password System.get_env("ADMIN_PASSWORD")
-
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -19,9 +16,7 @@ defmodule TsheeterWeb.Router do
   end
 
   pipeline :admins_only do
-    if Mix.env() == :prod do
-      plug :basic_auth, username: @admin_username, password: @admin_password
-    end
+    plug :basic_auth, Application.compile_env!(:tsheeter, :basic_auth)
   end
 
   scope "/", TsheeterWeb do

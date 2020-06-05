@@ -26,3 +26,7 @@ config :tsheeter, TsheeterWeb.Endpoint,
   ],
   secret_key_base: secret_key_base,
   check_origin: ["//tsheeter.dgoeke.io"]
+
+config :tsheeter, :basic_auth,
+  username: System.get_env("ADMIN_USERNAME"),
+  password: System.get_env("ADMIN_PASSWORD"),

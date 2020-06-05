@@ -70,3 +70,7 @@ config :libcluster,
       ]
     ]
   ]
+
+config :tsheeter, :basic_auth,
+  username: "admin",
+  password: "admin"
