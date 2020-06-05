@@ -26,11 +26,16 @@ config :tsheeter, Tsheeter.Repo,
 config :libcluster,
   topologies: [
     k8s: [
-      strategy: Elixir.Cluster.Strategy.Kubernetes.DNS,
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
       config: [
-        service: "tsheeter",
-        application_name: "tsheeter",
+        kubernetes_node_basename: "tsheeter",
+        kubernetes_selector: "app=tsheeter",
+        kubernetes_ip_lookup_mode: :pods,
         polling_interval: 3_000
       ]
     ]
   ]
+
+config :tsheeter, :basic_auth,
+  username: System.get_env("ADMIN_USERNAME"),
+  password: System.get_env("ADMIN_PASSWORD")
