@@ -30,6 +30,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: RELEASE_DISTRIBUTION
+          value: name
+        - name: RELEASE_NAME
+          value: tsheeter@$(MY_POD_IP)
         envFrom:
         - secretRef:
             name: tsheeter
