@@ -57,7 +57,8 @@ defmodule Tsheeter.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:slack, "~> 0.23.2"},
-      {:libcluster, "~> 3.2"}
+      {:libcluster, "~> 3.2"},
+      {:horde, "~> 0.7.0"}  # requires older telemetry
     ]
   end
 

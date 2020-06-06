@@ -57,7 +57,6 @@ defmodule TsheeterWeb.SlackController do
   def event(conn, %{"token" => @verify_token}), do: text(conn, "OK")
 
   defp check_error(%{"ok" => true} = resp, _req), do: resp
-
   defp check_error(%{"ok" => false} = resp, req) do
     req = Jason.encode!(req, pretty: true)
     resp = Jason.encode!(resp, pretty: true)
