@@ -42,6 +42,11 @@ defmodule TsheeterWeb.Router do
     post "/event", SlackController, :event
   end
 
+  scope "/oauth", TsheeterWeb do
+    pipe_through :browser
+    get "/", OauthController, :callback
+  end
+
   scope "/" do
     pipe_through [:browser, :admins_only]
     live_dashboard "/dashboard", metrics: TsheeterWeb.Telemetry

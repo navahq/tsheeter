@@ -70,3 +70,5 @@ config :libcluster,
       ]
     ]
   ]
+
+config :oauth2, debug: true

@@ -23,3 +23,8 @@ config :logger, level: :warn
 
 config :libcluster,
   topologies: []
+
+config :tsheeter, :oauth,
+  client_id: "client_id",
+  client_secret: "client_secret",
+  redirect_uri: "http://localhost:4000/oauth"

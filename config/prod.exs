@@ -34,3 +34,8 @@ config :libcluster,
       ]
     ]
   ]
+
+config :tsheeter, :oauth,
+  client_id: System.get_env("OAUTH_CLIENT_ID"),
+  client_secret: System.get_env("OAUTH_CLIENT_SECRET"),
+  redirect_uri: "https://tsheeter.dgoeke.io/oauth"

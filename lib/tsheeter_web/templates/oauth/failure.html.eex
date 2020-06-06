@@ -1,0 +1,17 @@
+<div>
+    <h1>Failure to Authorize</h1>
+
+    <p>There was a problem connecting to your account on TSheets. Maybe you denied access,
+    or maybe something else. Here's what the server said:</p>
+
+    <table>
+        <tr>
+            <td><strong>Error</strong>:</td>
+            <td><%= @error %></td>
+        </tr>
+        <tr>
+            <td><strong>Error Description</strong>:</td>
+            <td><%= @error_description %></td>
+        </tr>
+    </table>
+</div>
