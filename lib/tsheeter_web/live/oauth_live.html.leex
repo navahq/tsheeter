@@ -1,0 +1,39 @@
+<%= if @success == false do %>
+    <div>
+        <h1>Failure to Authorize</h1>
+
+        <p>There was a problem connecting to your account on TSheets. Maybe you denied access,
+        or maybe something else. Here's what the server said:</p>
+
+        <table>
+            <tr>
+                <td><strong>Error</strong>:</td>
+                <td><%= @error %></td>
+            </tr>
+            <tr>
+                <td><strong>Error Description</strong>:</td>
+                <td><%= @error_description %></td>
+            </tr>
+        </table>
+    </div>
+<% else %>
+    <section>
+        <h1>Success!</h1>
+        <p>We got an authentication code for your account from TSheets! Now, the final step
+        is to use that code to generate an authorization token. Just a moment...</p>
+
+        <p>
+            <%= case @state do %>
+            <% :done -> %>
+                <p>Done! Your account was successfully connected to TSheets. You can close this
+                window now and continue to interact with TSheeter through Slack.</p>
+            <% :error -> %>
+                There was an error retrieving your token:
+                <pre><%= inspect(@error, pretty: true) %></pre>
+            <% :working -> %>
+                <img src="<%= Routes.static_path(@socket, "/images/loading.gif") %>" style="width:1em">
+                <%= @msg %>
+            <% end %>
+        </p>
+    </section>
+<% end %>
