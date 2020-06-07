@@ -59,7 +59,9 @@ defmodule Tsheeter.MixProject do
       {:slack, "~> 0.23.2"},
       {:libcluster, "~> 3.2"},
       {:horde, "~> 0.7.0"},
-      {:oauth2, "~> 2.0"}
+      {:oauth2, "~> 2.0"},
+      {:phoenix_live_view, "~> 0.13.2"},
+      {:floki, ">= 0.0.0", only: :test}
     ]
   end
 

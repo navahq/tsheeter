@@ -15,7 +15,8 @@ defmodule TsheeterWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
-    plug :fetch_flash
+    plug :fetch_live_flash
+    plug :put_root_layout, {TsheeterWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -44,7 +45,8 @@ defmodule TsheeterWeb.Router do
 
   scope "/oauth", TsheeterWeb do
     pipe_through :browser
-    get "/", OauthController, :callback
+    # get "/", OauthController, :callback
+    live "/", OauthLive, :callback
   end
 
   scope "/" do
