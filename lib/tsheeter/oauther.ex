@@ -1,5 +1,5 @@
 defmodule Tsheeter.Oauther do
-  use GenServer
+  use GenServer, restart: :transient
   require Logger
 
   defmodule State do
@@ -55,6 +55,11 @@ defmodule Tsheeter.Oauther do
   def callback(code, oauth_state) do
     {id, state_token} = decode_oauth_state!(oauth_state)
     GenServer.cast(via_registry(id), {:auth_code, code, state_token})
+    id
+  end
+
+  def subscribe(id) do
+    Phoenix.PubSub.subscribe(Tsheeter.PubSub, "oauth:#{id}")
   end
 
   ### Private functions
@@ -103,11 +108,11 @@ defmodule Tsheeter.Oauther do
     case OAuth2.Client.get_token(client, code: code) do
       {:ok, client} ->
         broadcast(state, {:got_token, token_info(client.token)})
-        {:noreply, %{state | client: client}}
+        {:stop, :normal, %{state | client: client}}
       {:error, result} ->
         Logger.error inspect(result)
         broadcast(state, {:error_getting_token, result})
-        {:noreply, state}
+        {:stop, :normal, state}
     end
   end
 end
