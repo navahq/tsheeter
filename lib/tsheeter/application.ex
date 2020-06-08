@@ -10,9 +10,10 @@ defmodule Tsheeter.Application do
       {Cluster.Supervisor, [topologies, [name: Tsheeter.ClusterSupervisor]]},
       {Horde.Registry, [name: Tsheeter.Registry, keys: :unique]},
       {Horde.DynamicSupervisor, [name: Tsheeter.UserSupervisor, strategy: :one_for_one]},
-      Tsheeter.Repo,
-      TsheeterWeb.Telemetry,
       {Phoenix.PubSub, name: Tsheeter.PubSub},
+      Tsheeter.Repo,
+      Tsheeter.Sync,
+      TsheeterWeb.Telemetry,
       TsheeterWeb.Endpoint,
       %{id: Tsheeter.HordeConnector, restart: :transient, start: {Task, :start_link, [
         fn ->

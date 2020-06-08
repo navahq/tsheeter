@@ -62,6 +62,10 @@ defmodule Tsheeter.Oauther do
     Phoenix.PubSub.subscribe(Tsheeter.PubSub, "oauth:#{id}")
   end
 
+  def subscribe() do
+    Phoenix.PubSub.subscribe(Tsheeter.PubSub, "oauth:*")
+  end
+
   ### Private functions
 
   defp process_id(%State{id: id}), do: process_id(id)
@@ -79,6 +83,7 @@ defmodule Tsheeter.Oauther do
 
   defp broadcast(%{id: id}, data) do
     Phoenix.PubSub.broadcast(Tsheeter.PubSub, "oauth:#{id}", data)
+    Phoenix.PubSub.broadcast(Tsheeter.PubSub, "oauth:*", data)
   end
 
   defp token_info(%OAuth2.AccessToken{access_token: access_token, expires_at: expires_at, refresh_token: refresh_token, other_params: %{"user_id" => user_id}}) do
@@ -102,12 +107,12 @@ defmodule Tsheeter.Oauther do
     {:reply, url, state}
   end
 
-  def handle_cast({:auth_code, code, received_token}, %State{state_token: received_token, client: client} = state) do
+  def handle_cast({:auth_code, code, received_token}, %State{id: id, state_token: received_token, client: client} = state) do
     broadcast(state, :getting_token)
 
     case OAuth2.Client.get_token(client, code: code) do
       {:ok, client} ->
-        broadcast(state, {:got_token, token_info(client.token)})
+        broadcast(state, {:got_token, id, token_info(client.token)})
         {:stop, :normal, %{state | client: client}}
       {:error, result} ->
         Logger.error inspect(result)
