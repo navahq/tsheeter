@@ -66,6 +66,10 @@ defmodule Tsheeter.Oauther do
     Phoenix.PubSub.subscribe(Tsheeter.PubSub, "oauth:*")
   end
 
+  def refresh(id, access_token, refresh_token) do
+    GenServer.cast(via_registry(id), {:refresh, access_token, refresh_token})
+  end
+
   ### Private functions
 
   defp process_id(%State{id: id}), do: process_id(id)
@@ -119,5 +123,30 @@ defmodule Tsheeter.Oauther do
         broadcast(state, {:error_getting_token, result})
         {:stop, :normal, state}
     end
+  end
+
+  def handle_cast({:refresh, access_token, refresh_token}, %State{id: id} = state) do
+    Logger.info "Refreshing token for #{id}"
+
+    token =
+      OAuth2.AccessToken.new(access_token)
+      |> Map.put(:refresh_token, refresh_token)
+      |> Map.put(:token_type, "Bearer")
+
+    config =
+      Application.fetch_env!(:tsheeter, :oauth)
+      |> Keyword.put(:token, token)
+
+    client =
+      OAuth2.Client.new(config)
+      |> OAuth2.Client.put_serializer("application/json", Jason)
+
+    {:ok, client} =
+      OAuth2.Client.refresh_token(client,
+        [client_id: client.client_id, client_secret: client.client_secret],
+        [{"Authorization", "Bearer " <> access_token}])
+
+    broadcast(state, {:got_token, id, token_info(client.token)})
+    {:stop, :normal, %{state | client: client}}
   end
 end
