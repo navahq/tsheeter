@@ -31,7 +31,7 @@ defmodule Tsheeter.MixProject do
   def application do
     [
       mod: {Tsheeter.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :ssl]
     ]
   end
 
