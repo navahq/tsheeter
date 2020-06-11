@@ -13,7 +13,12 @@ defmodule Tsheeter.Oauther do
   ### Client API
 
   def create(id) do
-    Horde.DynamicSupervisor.start_child(Tsheeter.UserSupervisor, {__MODULE__, id})
+    case Horde.DynamicSupervisor.start_child(Tsheeter.UserSupervisor, {__MODULE__, id}) do
+      {:ok, _} = response -> response
+      {:error, {{:badmatch, {:error, {:already_started, pid}}}, _}} ->
+        {:ok, pid}
+      x -> x
+    end
   end
 
   def start_link(id) do
