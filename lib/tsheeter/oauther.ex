@@ -45,10 +45,6 @@ defmodule Tsheeter.Oauther do
     {:ok, state}
   end
 
-  def state(id) do
-    GenServer.call(via_registry(id), {:get_state})
-  end
-
   def client(id) do
     GenServer.call(via_registry(id), {:get_client})
   end
@@ -127,10 +123,6 @@ defmodule Tsheeter.Oauther do
   end
 
   ### Server callbacks
-
-  def handle_call({:get_state}, _from, state) do
-    {:reply, state, state}
-  end
 
   def handle_call({:get_client}, _from, state) do
     {:reply, state.client, state}
