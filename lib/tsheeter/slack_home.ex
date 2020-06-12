@@ -85,7 +85,25 @@ defmodule Tsheeter.SlackHome do
                 emoji: true
               },
               value: :disconnect,
-              style: :danger
+              style: :danger,
+              confirm: %{
+                title: %{
+                  type: :plain_text,
+                  text: "Are you sure?"
+                },
+                text: %{
+                  type: :mrkdwn,
+                  text: "This will stop all reminders and delete all your information from storage."
+                },
+                confirm: %{
+                  type: :plain_text,
+                  text: "Disconnect me"
+                },
+                deny: %{
+                  type: :plain_text,
+                  text: "Cancel"
+                }
+              }
             }
           ]
         },
