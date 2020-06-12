@@ -1,4 +1,5 @@
 defmodule Tsheeter.Oauther do
+  alias Tsheeter.Token
   use GenServer, restart: :transient
   require Logger
 
@@ -12,8 +13,12 @@ defmodule Tsheeter.Oauther do
 
   ### Client API
 
-  def create(id) do
-    case Horde.DynamicSupervisor.start_child(Tsheeter.UserSupervisor, {__MODULE__, id}) do
+  def create(%Token{slack_uid: slack_uid} = token) do
+    create(slack_uid, token)
+  end
+
+  def create(id, token \\ nil) do
+    case Horde.DynamicSupervisor.start_child(Tsheeter.UserSupervisor, {__MODULE__, %{id: id, token: token}}) do
       {:ok, _} = response -> response
       {:error, {{:badmatch, {:error, {:already_started, pid}}}, _}} ->
         {:ok, pid}
@@ -21,10 +26,11 @@ defmodule Tsheeter.Oauther do
     end
   end
 
-  def start_link(id) do
+  def start_link(%{id: id, token: token}) do
     client =
       OAuth2.Client.new(Application.fetch_env!(:tsheeter, :oauth))
       |> OAuth2.Client.put_serializer("application/json", Jason)
+      |> apply_token(token)
 
     state = %State{
       id: id,
@@ -41,6 +47,10 @@ defmodule Tsheeter.Oauther do
 
   def state(id) do
     GenServer.call(via_registry(id), {:get_state})
+  end
+
+  def client(id) do
+    GenServer.call(via_registry(id), {:get_client})
   end
 
   def authorize_url(id) do
@@ -104,10 +114,26 @@ defmodule Tsheeter.Oauther do
     }
   end
 
+  defp apply_token(client, nil), do: client
+
+  defp apply_token(client, %Token{access_token: access_token, refresh_token: refresh_token, expires_at: expires_at}) do
+    token =
+      OAuth2.AccessToken.new(access_token)
+      |> Map.put(:refresh_token, refresh_token)
+      |> Map.put(:expires_at, DateTime.to_unix(expires_at))
+      |> Map.put(:token_type, "Bearer")
+
+    %{client | token: token}
+  end
+
   ### Server callbacks
 
   def handle_call({:get_state}, _from, state) do
     {:reply, state, state}
+  end
+
+  def handle_call({:get_client}, _from, state) do
+    {:reply, state.client, state}
   end
 
   def handle_call({:authorize_url}, _from, %State{id: id, client: client, state_token: state_token} = state) do
