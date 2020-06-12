@@ -15,6 +15,7 @@ defmodule Tsheeter.Application do
         {Horde.DynamicSupervisor, [name: Tsheeter.UserSupervisor, strategy: :one_for_one]},
         {Phoenix.PubSub, name: Tsheeter.PubSub},
         Tsheeter.Sync,
+        Tsheeter.SlackHome,
         TsheeterWeb.Telemetry,
         TsheeterWeb.Endpoint,
         %{id: Tsheeter.HordeConnector, restart: :transient, start: {Task, :start_link, [

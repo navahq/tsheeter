@@ -48,4 +48,6 @@ defmodule Tsheeter.Token do
       conflict_target: :slack_uid
     )
   end
+
+  def delete!(token), do: Repo.delete!(token)
 end

@@ -5,6 +5,7 @@ defmodule Tsheeter.Sync do
   require Logger
 
   @refresh_schedule 1_000 * 10 * 60   # (in ms) scan for tokens to refresh every 10 minutes
+  @topic "tokens"
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :initial_state)
@@ -36,7 +37,8 @@ defmodule Tsheeter.Sync do
       refresh_token: refresh_token
     }
 
-    Token.insert!(attrs)
+    token = Token.insert!(attrs)
+    broadcast({:token_available, token})
     {:noreply, state}
   end
 
@@ -47,5 +49,13 @@ defmodule Tsheeter.Sync do
       Oauther.create(token.slack_uid)
       Oauther.refresh(token.slack_uid, token.access_token, token.refresh_token)
     end
+  end
+
+  defp broadcast(data) do
+    Phoenix.PubSub.broadcast(Tsheeter.PubSub, @topic, data)
+  end
+
+  def subscribe() do
+    Phoenix.PubSub.subscribe(Tsheeter.PubSub, @topic)
   end
 end
