@@ -28,3 +28,6 @@ config :tsheeter, :oauth,
   client_id: "client_id",
   client_secret: "client_secret",
   redirect_uri: "http://localhost:4000/oauth"
+
+config :tsheeter,
+  slack_verify_token: System.get_env("SLACK_VERIFICATION_TOKEN")

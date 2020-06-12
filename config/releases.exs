@@ -42,3 +42,10 @@ admin_password =
 config :tsheeter, :basic_auth,
   username: admin_username,
   password: admin_password
+
+slack_verify_token =
+  System.get_env("SLACK_VERIFICATION_TOKEN") ||
+    raise "environment variable SLACK_VERIFICATION_TOKEN is missing"
+
+config :tsheeter,
+  slack_verify_token: slack_verify_token
