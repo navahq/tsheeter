@@ -1,6 +1,6 @@
 defmodule Tsheeter.Sync do
   use GenServer
-  alias Tsheeter.Oauther
+  alias Tsheeter.UserManager
   alias Tsheeter.Token
   require Logger
 
@@ -12,7 +12,7 @@ defmodule Tsheeter.Sync do
   end
 
   def init(_) do
-    Oauther.subscribe()
+    UserManager.subscribe()
     schedule_refresh()
     {:ok, :no_state}
   end
@@ -46,8 +46,8 @@ defmodule Tsheeter.Sync do
 
   def refresh_tokens() do
     for token <- Token.all_expiring() do
-      Oauther.create(token.slack_uid)
-      Oauther.refresh(token.slack_uid, token.access_token, token.refresh_token)
+      UserManager.create(token.slack_uid)
+      UserManager.refresh(token.slack_uid, token.access_token, token.refresh_token)
     end
   end
 

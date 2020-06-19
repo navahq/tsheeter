@@ -1,6 +1,6 @@
 defmodule Tsheeter.SlackHome do
   use GenServer
-  alias Tsheeter.Oauther
+  alias Tsheeter.UserManager
   alias Tsheeter.Token
   alias Tsheeter.Sync
   require Logger
@@ -115,7 +115,7 @@ defmodule Tsheeter.SlackHome do
   end
 
   defp handle_disconnected(user_id, bot_token) do
-    {:ok, _pid} = Oauther.create(user_id)
+    {:ok, _pid} = UserManager.create(user_id)
 
     request = %{
       type: :home,
@@ -142,7 +142,7 @@ defmodule Tsheeter.SlackHome do
                 text: "Connect me!",
                 emoji: true
               },
-              url: Oauther.authorize_url(user_id),
+              url: UserManager.authorize_url(user_id),
               style: :primary
             }
           ]

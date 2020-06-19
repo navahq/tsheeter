@@ -1,4 +1,4 @@
-defmodule Tsheeter.Oauther do
+defmodule Tsheeter.UserManager do
   alias Tsheeter.Token
   use GenServer, restart: :transient
   require Logger
@@ -63,9 +63,9 @@ defmodule Tsheeter.Oauther do
     {id, state_token}
   end
 
-  def callback(code, oauth_state) do
+  def got_auth_code(code, oauth_state) do
     {id, state_token} = decode_oauth_state!(oauth_state)
-    GenServer.cast(via_registry(id), {:auth_code, code, state_token})
+    GenServer.cast(via_registry(id), {:got_auth_code, code, state_token})
     id
   end
 
@@ -84,7 +84,7 @@ defmodule Tsheeter.Oauther do
   ### Private functions
 
   defp process_id(%State{id: id}), do: process_id(id)
-  defp process_id(id), do: :"oauther_#{id}"
+  defp process_id(id), do: :"user_#{id}"
 
   defp via_registry(id) do
     {:via, Horde.Registry, {Tsheeter.Registry, process_id(id)}}
@@ -134,17 +134,17 @@ defmodule Tsheeter.Oauther do
     {:reply, url, state}
   end
 
-  def handle_cast({:auth_code, code, received_token}, %State{id: id, state_token: received_token, client: client} = state) do
+  def handle_cast({:got_auth_code, code, received_token}, %State{id: id, state_token: received_token, client: client} = state) do
     broadcast(state, :getting_token)
 
     case OAuth2.Client.get_token(client, code: code) do
       {:ok, client} ->
         broadcast(state, {:got_token, id, token_info(client.token)})
-        {:stop, :normal, %{state | client: client}}
+        {:noreply, %{state | client: client}}
       {:error, result} ->
         Logger.error inspect(result)
         broadcast(state, {:error_getting_token, result})
-        {:stop, :normal, state}
+        {:noreply, state}
     end
   end
 
@@ -170,6 +170,6 @@ defmodule Tsheeter.Oauther do
         [{"Authorization", "Bearer " <> access_token}])
 
     broadcast(state, {:got_token, id, token_info(client.token)})
-    {:stop, :normal, %{state | client: client}}
+    {:noreply, %{state | client: client}}
   end
 end

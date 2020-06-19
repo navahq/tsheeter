@@ -1,11 +1,11 @@
 defmodule TsheeterWeb.OauthLive do
   use TsheeterWeb, :live_view
-  alias Tsheeter.Oauther
+  alias Tsheeter.UserManager
 
   def mount(%{"code" => code, "state" => state}, _session, socket) do
     if connected?(socket) do
-      id = Oauther.callback(code, state)
-      Oauther.subscribe(id)
+      id = UserManager.got_auth_code(code, state)
+      UserManager.subscribe(id)
     end
 
     {:ok, assign(socket, success: true, msg: "Waiting for your task to start...", state: :working)}

@@ -45,7 +45,6 @@ defmodule TsheeterWeb.Router do
 
   scope "/oauth", TsheeterWeb do
     pipe_through :browser
-    # get "/", OauthController, :callback
     live "/", OauthLive, :callback
   end
 
