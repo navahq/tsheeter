@@ -2,7 +2,6 @@ defmodule Tsheeter.SlackHome do
   use GenServer
   alias Tsheeter.UserManager
   alias Tsheeter.Token
-  alias Tsheeter.Sync
   require Logger
 
   @server_name :slack_home
@@ -15,7 +14,7 @@ defmodule Tsheeter.SlackHome do
 
   def init(_) do
     state = %{bot_token: System.get_env("SLACK_BOT_TOKEN")}
-    Sync.subscribe()
+    Token.subscribe()
     {:ok, state}
   end
 
@@ -44,17 +43,18 @@ defmodule Tsheeter.SlackHome do
   end
 
   def handle_cast({:disconnect_pressed, user_id}, state) do
-    token = Token.get_by_slack_id(user_id)
-    if token, do: Token.delete!(token)
+    UserManager.forget_token(user_id)
 
     set_disconnected(user_id)
     {:noreply, state}
   end
 
-  def handle_info({:token_available, %Tsheeter.Token{slack_uid: slack_uid} = token}, %{bot_token: bot_token} = state) do
+  def handle_info({:token, %Token{slack_uid: slack_uid} = token}, %{bot_token: bot_token} = state) do
     handle_connected(slack_uid, token, bot_token)
     {:noreply, state}
   end
+
+  def handle_info(_, state), do: {:noreply, state}
 
   ### Private functions
 

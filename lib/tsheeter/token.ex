@@ -5,7 +5,9 @@ defmodule Tsheeter.Token do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  @expire_period 60 * 60 * 24   # (in seconds) refresh tokens 24 hours before they expire
+  # (in seconds) refresh tokens 24 hours before they expire
+  @expire_period 60 * 60 * 24
+  @topic "tokens"
 
   schema "tokens" do
     field :access_token, :string
@@ -27,6 +29,7 @@ defmodule Tsheeter.Token do
 
   def get_by_slack_id(slack_id) do
     query = from t in Token, where: t.slack_uid == ^slack_id
+
     case Repo.all(query) do
       [item] -> item
       [] -> nil
@@ -38,16 +41,44 @@ defmodule Tsheeter.Token do
     Repo.all(from t in Token, where: t.expires_at <= ^expire_max)
   end
 
-  def insert!(attrs = %{access_token: access_token, expires_at: expires_at, refresh_token: refresh_token}) do
+  def store_from_oauth!(slack_uid, %OAuth2.AccessToken{
+        access_token: access_token,
+        expires_at: expires_at,
+        refresh_token: refresh_token,
+        other_params: %{"user_id" => user_id}
+      }) do
+    expires_at = DateTime.from_unix!(expires_at)
+
     %Token{}
-    |> Token.changeset(attrs)
+    |> Token.changeset(%{
+      slack_uid: slack_uid,
+      tsheets_uid: String.to_integer(user_id),
+      access_token: access_token,
+      expires_at: expires_at,
+      refresh_token: refresh_token
+    })
     |> Repo.insert!(
       on_conflict: [
         set: [access_token: access_token, refresh_token: refresh_token, expires_at: expires_at]
       ],
-      conflict_target: :slack_uid
-    )
+      conflict_target: :slack_uid)
+    |> broadcast()
+  end
+
+  def error!(slack_uid, action, result) do
+    Phoenix.PubSub.broadcast(Tsheeter.PubSub, @topic, {:error, %{slack_uid: slack_uid, action: action, result: result}})
   end
 
   def delete!(token), do: Repo.delete!(token)
+
+  defp broadcast(%Token{} = token) do
+    Phoenix.PubSub.broadcast(Tsheeter.PubSub, @topic, {:token, token})
+    token
+  end
+
+  def subscribe() do
+    Phoenix.PubSub.subscribe(Tsheeter.PubSub, @topic)
+  end
+
+  def all(), do: Repo.all(Token)
 end

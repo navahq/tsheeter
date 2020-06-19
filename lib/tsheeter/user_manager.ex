@@ -1,6 +1,6 @@
 defmodule Tsheeter.UserManager do
   alias Tsheeter.Token
-  use GenServer, restart: :transient
+  use GenServer
   require Logger
 
   defmodule State do
@@ -69,16 +69,12 @@ defmodule Tsheeter.UserManager do
     id
   end
 
-  def subscribe(id) do
-    Phoenix.PubSub.subscribe(Tsheeter.PubSub, "oauth:#{id}")
+  def refresh_token(id) do
+    GenServer.cast(via_registry(id), :refresh_token)
   end
 
-  def subscribe() do
-    Phoenix.PubSub.subscribe(Tsheeter.PubSub, "oauth:*")
-  end
-
-  def refresh(id, access_token, refresh_token) do
-    GenServer.cast(via_registry(id), {:refresh, access_token, refresh_token})
+  def forget_token(id) do
+    GenServer.cast(via_registry(id), :forget_token)
   end
 
   ### Private functions
@@ -94,20 +90,6 @@ defmodule Tsheeter.UserManager do
     :crypto.strong_rand_bytes(length)
     |> Base.url_encode64
     |> binary_part(0, length)
-  end
-
-  defp broadcast(%{id: id}, data) do
-    Phoenix.PubSub.broadcast(Tsheeter.PubSub, "oauth:#{id}", data)
-    Phoenix.PubSub.broadcast(Tsheeter.PubSub, "oauth:*", data)
-  end
-
-  defp token_info(%OAuth2.AccessToken{access_token: access_token, expires_at: expires_at, refresh_token: refresh_token, other_params: %{"user_id" => user_id}}) do
-    %{
-      access_token: access_token,
-      expires_at: expires_at,
-      refresh_token: refresh_token,
-      user_id: user_id
-    }
   end
 
   defp apply_token(client, nil), do: client
@@ -134,42 +116,39 @@ defmodule Tsheeter.UserManager do
     {:reply, url, state}
   end
 
-  def handle_cast({:got_auth_code, code, received_token}, %State{id: id, state_token: received_token, client: client} = state) do
-    broadcast(state, :getting_token)
-
-    case OAuth2.Client.get_token(client, code: code) do
+  def handle_cast({:got_auth_code, code, state_token}, %State{id: id, state_token: state_token, client: client} = state) do
+    case OAuth2.Client.get_token(client, code: code, client_secret: client.client_secret) do
       {:ok, client} ->
-        broadcast(state, {:got_token, id, token_info(client.token)})
+        Token.store_from_oauth!(id, client.token)
         {:noreply, %{state | client: client}}
       {:error, result} ->
-        Logger.error inspect(result)
-        broadcast(state, {:error_getting_token, result})
+        Token.error!(id, :getting, result)
         {:noreply, state}
     end
   end
 
-  def handle_cast({:refresh, access_token, refresh_token}, %State{id: id} = state) do
+  def handle_cast(:refresh_token, %State{id: id, client: client} = state) do
     Logger.info "Refreshing token for #{id}"
 
-    token =
-      OAuth2.AccessToken.new(access_token)
-      |> Map.put(:refresh_token, refresh_token)
-      |> Map.put(:token_type, "Bearer")
-
-    config =
-      Application.fetch_env!(:tsheeter, :oauth)
-      |> Keyword.put(:token, token)
-
-    client =
-      OAuth2.Client.new(config)
-      |> OAuth2.Client.put_serializer("application/json", Jason)
-
-    {:ok, client} =
+    result =
       OAuth2.Client.refresh_token(client,
         [client_id: client.client_id, client_secret: client.client_secret],
-        [{"Authorization", "Bearer " <> access_token}])
+        [{"Authorization", "Bearer " <> client.token.access_token}])
 
-    broadcast(state, {:got_token, id, token_info(client.token)})
-    {:noreply, %{state | client: client}}
+    case result do
+      {:ok, client} ->
+        Token.store_from_oauth!(id, client.token)
+        {:noreply, %{state | client: %{state.client | token: client.token}}}
+      {:error, result} ->
+        Token.error!(id, :refreshing, result)
+        {:noreply, state}
+    end
+  end
+
+  def handle_cast(:forget_token, %State{id: id} = state) do
+    token = Token.get_by_slack_id(id)
+    if token, do: Token.delete!(token)
+
+    {:noreply, %{state | client: %{state.client | token: nil}}}
   end
 end

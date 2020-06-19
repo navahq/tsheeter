@@ -2,6 +2,8 @@ defmodule Tsheeter.Application do
   @moduledoc false
 
   use Application
+  alias Tsheeter.Token
+  alias Tsheeter.UserManager
 
   def start(_type, _args) do
     topologies = Application.get_env(:libcluster, :topologies)
@@ -22,7 +24,8 @@ defmodule Tsheeter.Application do
           fn ->
             Horde.Cluster.set_members(Tsheeter.Registry, membership(Tsheeter.Registry, nodes()))
             Horde.Cluster.set_members(Tsheeter.UserSupervisor, membership(Tsheeter.UserSupervisor, nodes()))
-          end ]}}
+          end ]}},
+        {Task, &start_user_managers/0}
       ]
     else
       []
@@ -39,4 +42,10 @@ defmodule Tsheeter.Application do
 
   defp nodes(), do: [Node.self()] ++ Node.list()
   defp membership(horde, nodes), do: Enum.map(nodes, fn node -> {horde, node} end)
+
+  defp start_user_managers() do
+    for token <- Token.all() do
+      UserManager.create(token)
+    end
+  end
 end
