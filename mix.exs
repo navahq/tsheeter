@@ -61,6 +61,7 @@ defmodule Tsheeter.MixProject do
       {:horde, "~> 0.7.0"},
       {:oauth2, "~> 2.0"},
       {:phoenix_live_view, "~> 0.13.2"},
+      {:tzdata, "~> 1.0.1"},
       {:floki, ">= 0.0.0", only: :test}
     ]
   end
