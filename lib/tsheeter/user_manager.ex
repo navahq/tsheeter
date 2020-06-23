@@ -112,6 +112,9 @@ defmodule Tsheeter.UserManager do
     %{state | client: %{client | token: token}, tsheets_uid: tsheets_uid}
   end
 
+  defp parse_date_str(nil), do: nil
+  defp parse_date_str(s) when is_binary(s), do: Date.from_iso8601!(s)
+
   ### Server callbacks
 
   def handle_call({:get_client}, _from, state) do
@@ -132,7 +135,23 @@ defmodule Tsheeter.UserManager do
 
     params = [page: 1, user_ids: tsheets_uid, start_date: today, end_date: today]
     response = Client.get!(client, "/api/v1/timesheets", [], params: params)
-    result = get_in(response.body, ["results", "timesheets"])
+
+    submitted_to =
+      response.body
+      |> get_in(["supplemental_data", "users", to_string(tsheets_uid), "submitted_to"])
+      |> parse_date_str()
+
+    total_time =
+      response.body
+      |> get_in(["results", "timesheets"])
+      |> Enum.map(fn {_k, v} -> Map.get(v, "duration") end)
+      |> Enum.sum()
+
+    result = %{
+      saved_hours: total_time / (60 * 60),
+      submitted?: submitted_to >= today
+    }
+
     {:reply, result, state}
   end
 
