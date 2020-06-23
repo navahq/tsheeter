@@ -2,6 +2,7 @@ defmodule Tsheeter.Token do
   use Ecto.Schema
   alias Tsheeter.Repo
   alias Tsheeter.Token
+  alias Tsheeter.ScheduleType
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
@@ -15,6 +16,8 @@ defmodule Tsheeter.Token do
     field :refresh_token, :string
     field :slack_uid, :string
     field :tsheets_uid, :integer
+    field :check_saved_schedule, ScheduleType, default: ScheduleType.default_saved_schedule()
+    field :check_submitted_schedule, ScheduleType, default: ScheduleType.default_submitted_schedule()
 
     timestamps()
   end
