@@ -1,4 +1,4 @@
-defmodule Tsheeter.UserManager do
+defmodule Tsheeter.User do
   alias Tsheeter.Token
   alias OAuth2.Client
   alias OAuth2.AccessToken

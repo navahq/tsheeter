@@ -1,8 +1,8 @@
-defmodule Tsheeter.Sync do
+defmodule Tsheeter.Checker do
   use GenServer
   require Logger
   alias Tsheeter.Token
-  alias Tsheeter.UserManager
+  alias Tsheeter.User
 
   @refresh_schedule 1_000 * 60   # (in ms) scan every 60 seconds
 
@@ -44,7 +44,7 @@ defmodule Tsheeter.Sync do
     ids = Token.with_check_between(last_scan, now)
 
     for id <- ids do
-      result = UserManager.todays_timesheet(id)
+      result = User.todays_timesheet(id)
       Logger.info "Result: #{inspect(result, pretty: true)}"
     end
 

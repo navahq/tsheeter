@@ -2,9 +2,9 @@ defmodule Tsheeter.Application do
   @moduledoc false
 
   use Application
-  alias Tsheeter.Sync
+  alias Tsheeter.Checker
   alias Tsheeter.Token
-  alias Tsheeter.UserManager
+  alias Tsheeter.User
 
   def start(_type, _args) do
     topologies = Application.get_env(:libcluster, :topologies)
@@ -44,9 +44,9 @@ defmodule Tsheeter.Application do
   defp membership(horde, nodes), do: Enum.map(nodes, fn node -> {horde, node} end)
 
   defp start_dynamic_procs() do
-    Sync.create
+    Checker.create
     for token <- Token.all() do
-      UserManager.create(token)
+      User.create(token)
     end
   end
 end

@@ -1,13 +1,13 @@
 defmodule TsheeterWeb.OauthLive do
   use TsheeterWeb, :live_view
   alias Tsheeter.Token
-  alias Tsheeter.UserManager
+  alias Tsheeter.User
 
   def mount(%{"code" => code, "state" => state}, _session, socket) do
     socket = assign(socket, success: true, msg: "Reaching out to TSheets to get your authorization token...", state: :working)
 
     if connected?(socket) do
-      id = UserManager.got_auth_code(code, state)
+      id = User.got_auth_code(code, state)
       Token.subscribe()
       {:ok, assign(socket, id: id)}
     else
