@@ -2,6 +2,7 @@ defmodule Tsheeter.Application do
   @moduledoc false
 
   use Application
+  alias Tsheeter.Sync
   alias Tsheeter.Token
   alias Tsheeter.UserManager
 
@@ -14,24 +15,23 @@ defmodule Tsheeter.Application do
       [
         {Cluster.Supervisor, [topologies, [name: Tsheeter.ClusterSupervisor]]},
         {Horde.Registry, [name: Tsheeter.Registry, keys: :unique]},
-        {Horde.DynamicSupervisor, [name: Tsheeter.UserSupervisor, strategy: :one_for_one]},
+        {Horde.DynamicSupervisor, [name: Tsheeter.Supervisor, strategy: :one_for_one]},
         {Phoenix.PubSub, name: Tsheeter.PubSub},
-        Tsheeter.Sync,
         Tsheeter.SlackHome,
         TsheeterWeb.Telemetry,
         TsheeterWeb.Endpoint,
         %{id: Tsheeter.HordeConnector, restart: :transient, start: {Task, :start_link, [
           fn ->
             Horde.Cluster.set_members(Tsheeter.Registry, membership(Tsheeter.Registry, nodes()))
-            Horde.Cluster.set_members(Tsheeter.UserSupervisor, membership(Tsheeter.UserSupervisor, nodes()))
+            Horde.Cluster.set_members(Tsheeter.Supervisor, membership(Tsheeter.Supervisor, nodes()))
           end ]}},
-        {Task, &start_user_managers/0}
+        {Task, &start_dynamic_procs/0}
       ]
     else
       []
     end
 
-    opts = [strategy: :one_for_one, name: Tsheeter.Supervisor]
+    opts = [strategy: :one_for_one, name: Tsheeter.MainSupervisor]
     Supervisor.start_link(children, opts)
   end
 
@@ -43,7 +43,8 @@ defmodule Tsheeter.Application do
   defp nodes(), do: [Node.self()] ++ Node.list()
   defp membership(horde, nodes), do: Enum.map(nodes, fn node -> {horde, node} end)
 
-  defp start_user_managers() do
+  defp start_dynamic_procs() do
+    Sync.create
     for token <- Token.all() do
       UserManager.create(token)
     end

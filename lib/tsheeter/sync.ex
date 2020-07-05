@@ -6,8 +6,20 @@ defmodule Tsheeter.Sync do
 
   @refresh_schedule 1_000 * 60   # (in ms) scan every 60 seconds
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, Time.utc_now())
+  def create() do
+    case Horde.DynamicSupervisor.start_child(Tsheeter.Supervisor, {__MODULE__, Time.utc_now}) do
+      {:ok, _} = response -> response
+      {:error, {{:badmatch, {:error, {:already_started, pid}}}, _}} ->
+        {:ok, pid}
+      {:error, {:already_started, pid}} ->
+        {:ok, pid}
+      x -> x
+    end
+  end
+
+  def start_link(state) do
+    name_via_registry = {:via, Horde.Registry, {Tsheeter.Registry, __MODULE__}}
+    GenServer.start_link(__MODULE__, state, name: name_via_registry)
   end
 
   def init(last_scan) do

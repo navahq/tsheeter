@@ -25,9 +25,11 @@ defmodule Tsheeter.UserManager do
   end
 
   def create(id, token \\ nil) do
-    case Horde.DynamicSupervisor.start_child(Tsheeter.UserSupervisor, {__MODULE__, %{id: id, token: token}}) do
+    case Horde.DynamicSupervisor.start_child(Tsheeter.Supervisor, {__MODULE__, %{id: id, token: token}}) do
       {:ok, _} = response -> response
       {:error, {{:badmatch, {:error, {:already_started, pid}}}, _}} ->
+        {:ok, pid}
+      {:error, {:already_started, pid}} ->
         {:ok, pid}
       x -> x
     end
@@ -45,7 +47,7 @@ defmodule Tsheeter.UserManager do
     }
     |> apply_token(token)
 
-    {:ok, _pid} = GenServer.start_link(__MODULE__, state, name: via_registry(id))
+    GenServer.start_link(__MODULE__, state, name: via_registry(id))
   end
 
   def init(%State{} = state) do
@@ -123,7 +125,9 @@ defmodule Tsheeter.UserManager do
     %{state | client: %{client | token: new_token}, tsheets_uid: tsheets_uid}
   end
 
-  defp schedule_refresh!(%State{id: id, client: %Client{token: %AccessToken{access_token: access_token, expires_at: expires_at}}} = state, minimum_renew \\ 0) do
+  defp schedule_refresh!(state), do: schedule_refresh!(state, 0)
+
+  defp schedule_refresh!(%State{id: id, client: %Client{token: %AccessToken{access_token: access_token, expires_at: expires_at}}} = state, minimum_renew) do
     seconds = DateTime.diff(DateTime.from_unix!(expires_at), DateTime.utc_now)
 
     if seconds < 0 do
@@ -135,6 +139,8 @@ defmodule Tsheeter.UserManager do
 
     state
   end
+
+  defp schedule_refresh!(state, _), do: state
 
   defp parse_date_str(nil), do: nil
   defp parse_date_str(s) when is_binary(s), do: Date.from_iso8601!(s)
