@@ -1,18 +1,16 @@
 defmodule Tsheeter.Sync do
   use GenServer
-  alias Tsheeter.UserManager
-  alias Tsheeter.Token
   require Logger
 
-  @refresh_schedule 1_000 * 10 * 60   # (in ms) scan for tokens to refresh every 10 minutes
+  @refresh_schedule 1_000 * 60   # (in ms) scan every 60 seconds
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :initial_state)
+    GenServer.start_link(__MODULE__, DateTime.utc_now())
   end
 
-  def init(_) do
+  def init(state) do
     schedule_refresh()
-    {:ok, :no_state}
+    {:ok, state}
   end
 
   def schedule_refresh() do
@@ -20,16 +18,13 @@ defmodule Tsheeter.Sync do
   end
 
   def handle_info(:refresh, state) do
-    refresh_tokens()
+    run(state)
     schedule_refresh()
     {:noreply, state}
   end
 
   def handle_info(_, state), do: {:noreply, state}
 
-  def refresh_tokens() do
-    for token <- Token.all_expiring() do
-      UserManager.refresh_token(token.slack_uid)
-    end
+  def run(_last_refresh) do
   end
 end

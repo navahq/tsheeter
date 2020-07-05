@@ -1,6 +1,7 @@
 defmodule Tsheeter.UserManager do
   alias Tsheeter.Token
   alias OAuth2.Client
+  alias OAuth2.AccessToken
   use GenServer
   require Logger
 
@@ -14,6 +15,8 @@ defmodule Tsheeter.UserManager do
   end
 
   @timezone "US/Eastern"
+  @renew_secs_before_expiration 60 * 60 * 12    # renew tokens 12 hours before they expire
+  @refresh_error_retry_secs 60 * 30             # retry failed refreshes 30 minutes later
 
   ### Client API
 
@@ -47,7 +50,7 @@ defmodule Tsheeter.UserManager do
 
   def init(%State{} = state) do
     Token.subscribe()
-    {:ok, state}
+    {:ok, schedule_refresh!(state)}
   end
 
   def client(id) do
@@ -95,6 +98,13 @@ defmodule Tsheeter.UserManager do
     {:via, Horde.Registry, {Tsheeter.Registry, process_id(id)}}
   end
 
+  defp lookup(id) do
+    case Horde.Registry.lookup(Tsheeter.Registry, process_id(id)) do
+      [{pid, _}] -> pid
+      _ -> nil
+    end
+  end
+
   defp random_string(length) do
     :crypto.strong_rand_bytes(length)
     |> Base.url_encode64
@@ -104,26 +114,37 @@ defmodule Tsheeter.UserManager do
   defp apply_token(%State{} = state, nil), do: state
 
   defp apply_token(%State{client: client} = state, %Token{access_token: access_token, refresh_token: refresh_token, expires_at: expires_at, tsheets_uid: tsheets_uid}) do
-    token =
-      OAuth2.AccessToken.new(access_token)
+    new_token =
+      AccessToken.new(access_token)
       |> Map.put(:refresh_token, refresh_token)
       |> Map.put(:expires_at, DateTime.to_unix(expires_at))
       |> Map.put(:token_type, "Bearer")
 
-    %{state | client: %{client | token: token}, tsheets_uid: tsheets_uid}
+    %{state | client: %{client | token: new_token}, tsheets_uid: tsheets_uid}
+  end
+
+  defp schedule_refresh!(%State{id: id, client: %Client{token: %AccessToken{access_token: access_token, expires_at: expires_at}}} = state, minimum_renew \\ 0) do
+    seconds = DateTime.diff(DateTime.from_unix!(expires_at), DateTime.utc_now)
+
+    if seconds < 0 do
+      forget_token(id)
+    else
+      renew_in = max(seconds - @renew_secs_before_expiration, minimum_renew)
+      Process.send_after(lookup(id), {:scheduled_refresh, access_token}, renew_in * 1000)
+    end
+
+    state
   end
 
   defp parse_date_str(nil), do: nil
   defp parse_date_str(s) when is_binary(s), do: Date.from_iso8601!(s)
 
-  defp handle_token_result(%State{id: id} = state, get_token_result) do
+  defp handle_token_result!(get_token_result, action, id) do
     case get_token_result do
       {:ok, client} ->
-        token = Token.store_from_oauth!(id, client.token)
-        state |> apply_token(token)
+        Token.store_from_oauth!(id, client.token)
       {:error, result} ->
-        Token.error!(id, :getting, result)
-        state
+        Token.error!(id, action, result)
     end
   end
 
@@ -167,20 +188,22 @@ defmodule Tsheeter.UserManager do
     {:reply, result, state}
   end
 
-  def handle_cast({:got_auth_code, code, state_token}, %State{state_token: state_token, client: client} = state) do
-    result = Client.get_token(client, code: code, client_secret: client.client_secret)
-    {:noreply, state |> handle_token_result(result)}
+  def handle_cast({:got_auth_code, code, state_token}, %State{id: id, state_token: state_token, client: client} = state) do
+    Client.get_token(client, code: code, client_secret: client.client_secret)
+    |> handle_token_result!(:getting, id)
+
+    {:noreply, state}
   end
 
   def handle_cast(:refresh_token, %State{id: id, client: client} = state) do
     Logger.info "Refreshing token for #{id}"
 
-    result =
-      Client.refresh_token(client,
-        [client_id: client.client_id, client_secret: client.client_secret],
-        [{"Authorization", "Bearer " <> client.token.access_token}])
+    Client.refresh_token(client,
+      [client_id: client.client_id, client_secret: client.client_secret],
+      [{"Authorization", "Bearer " <> client.token.access_token}])
+    |> handle_token_result!(:refreshing, id)
 
-    {:noreply, state |> handle_token_result(result)}
+    {:noreply, state}
   end
 
   def handle_cast(:forget_token, %State{id: id} = state) do
@@ -191,9 +214,27 @@ defmodule Tsheeter.UserManager do
   end
 
   def handle_info({:token, %Token{slack_uid: id} = token}, %State{id: id} = state) do
-    {:noreply, state |> apply_token(token)}
+    state =
+      state
+      |> apply_token(token)
+      |> schedule_refresh!()
+
+    {:noreply, state}
   end
 
-  def handle_info(_, state), do: {:noreply, state}
+  def handle_info({:error, %{slack_uid: id, action: :refreshing}}, %State{id: id} = state) do
+    state = schedule_refresh!(state, @refresh_error_retry_secs)
+    {:noreply, state}
+  end
 
+  def handle_info({:scheduled_refresh, access_token}, %State{client: %Client{token: %AccessToken{access_token: access_token}}} = state) do
+    handle_cast(:refresh_token, state)
+  end
+
+  def handle_info({:scheduled_refresh, _}, %State{id: id} = state) do
+    Logger.warn("id=#{id} Ignoring :scheduled_refresh for obsolete token")
+    {:noreply, state}
+  end
+
+  def handle_info(_msg, state), do: {:noreply, state}
 end
