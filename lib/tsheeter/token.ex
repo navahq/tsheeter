@@ -2,7 +2,6 @@ defmodule Tsheeter.Token do
   use Ecto.Schema
   alias Tsheeter.Repo
   alias Tsheeter.Token
-  alias Tsheeter.ScheduleType
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
@@ -16,8 +15,7 @@ defmodule Tsheeter.Token do
     field :refresh_token, :string
     field :slack_uid, :string
     field :tsheets_uid, :integer
-    field :check_saved_schedule, ScheduleType, default: ScheduleType.default_saved_schedule()
-    field :check_submitted_schedule, ScheduleType, default: ScheduleType.default_submitted_schedule()
+    field :check_time, :time
 
     timestamps()
   end
@@ -84,4 +82,26 @@ defmodule Tsheeter.Token do
   end
 
   def all(), do: Repo.all(Token)
+
+  def to_time(hour, minute, timezone) do
+    t = DateTime.utc_now |> DateTime.shift_zone!(timezone)
+    t = %{ t | hour: hour, minute: minute, microsecond: {0, 0}, second: 0}
+
+    t |> DateTime.shift_zone!("UTC") |> DateTime.to_time
+  end
+
+  def set_check_time(id, time) do
+    {1, _} =
+      from(t in Token, where: t.slack_uid == ^id)
+      |> Repo.update_all(set: [check_time: time])
+  end
+
+  def with_check_between(t1, t2) do
+    query =
+      from t in Token,
+        where: t.check_time > ^t1 and t.check_time <= ^t2,
+        select: [t.slack_uid]
+
+    Repo.all(query)
+  end
 end
