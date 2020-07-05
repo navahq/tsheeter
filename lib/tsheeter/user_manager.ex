@@ -46,6 +46,7 @@ defmodule Tsheeter.UserManager do
   end
 
   def init(%State{} = state) do
+    Token.subscribe()
     {:ok, state}
   end
 
@@ -115,6 +116,17 @@ defmodule Tsheeter.UserManager do
   defp parse_date_str(nil), do: nil
   defp parse_date_str(s) when is_binary(s), do: Date.from_iso8601!(s)
 
+  defp handle_token_result(%State{id: id} = state, get_token_result) do
+    case get_token_result do
+      {:ok, client} ->
+        token = Token.store_from_oauth!(id, client.token)
+        state |> apply_token(token)
+      {:error, result} ->
+        Token.error!(id, :getting, result)
+        state
+    end
+  end
+
   ### Server callbacks
 
   def handle_call({:get_client}, _from, state) do
@@ -155,15 +167,9 @@ defmodule Tsheeter.UserManager do
     {:reply, result, state}
   end
 
-  def handle_cast({:got_auth_code, code, state_token}, %State{id: id, state_token: state_token, client: client} = state) do
-    case Client.get_token(client, code: code, client_secret: client.client_secret) do
-      {:ok, client} ->
-        token = Token.store_from_oauth!(id, client.token)
-        {:noreply, %{state | client: client, tsheets_uid: token.tsheets_uid}}
-      {:error, result} ->
-        Token.error!(id, :getting, result)
-        {:noreply, state}
-    end
+  def handle_cast({:got_auth_code, code, state_token}, %State{state_token: state_token, client: client} = state) do
+    result = Client.get_token(client, code: code, client_secret: client.client_secret)
+    {:noreply, state |> handle_token_result(result)}
   end
 
   def handle_cast(:refresh_token, %State{id: id, client: client} = state) do
@@ -174,14 +180,7 @@ defmodule Tsheeter.UserManager do
         [client_id: client.client_id, client_secret: client.client_secret],
         [{"Authorization", "Bearer " <> client.token.access_token}])
 
-    case result do
-      {:ok, client} ->
-        token = Token.store_from_oauth!(id, client.token)
-        {:noreply, %{state | client: %{state.client | token: client.token}, tsheets_uid: token.tsheets_uid}}
-      {:error, result} ->
-        Token.error!(id, :refreshing, result)
-        {:noreply, state}
-    end
+    {:noreply, state |> handle_token_result(result)}
   end
 
   def handle_cast(:forget_token, %State{id: id} = state) do
@@ -190,4 +189,11 @@ defmodule Tsheeter.UserManager do
 
     {:noreply, %{state | client: %{state.client | token: nil}}}
   end
+
+  def handle_info({:token, %Token{slack_uid: id} = token}, %State{id: id} = state) do
+    {:noreply, state |> apply_token(token)}
+  end
+
+  def handle_info(_, state), do: {:noreply, state}
+
 end

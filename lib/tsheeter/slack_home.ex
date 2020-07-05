@@ -158,8 +158,8 @@ defmodule Tsheeter.SlackHome do
     %{
       type: :section,
       text: %{
-      type: :mrkdwn,
-      text: "TSheeter is a bot that can connect to your TSheets account and remind you each day if you forget to save your time."
+        type: :mrkdwn,
+        text: "TSheeter is a bot that can connect to your TSheets account and remind you each day if you forget to save your time."
       }
     }
   end
