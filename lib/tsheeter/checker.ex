@@ -77,18 +77,19 @@ defmodule Tsheeter.Checker do
   end
 
   def check_timesheet(%Timesheet{date: date, saved_hours: hours, submitted?: submitted}) do
-    %Checks{
-      missing_weekday_save: weekday?(date) and hours == 0,
-      below_eight_hours: weekday?(date) and hours < 8.0,
-      missing_friday_submit: friday?(date) and not submitted,
-      missing_eom_submit_today: not submitted and date.day == Date.days_in_month(date),
-      missing_eom_submit_soon: not submitted and date.day < Date.days_in_month(date) and
-        (date.day + 1)..Date.days_in_month(date)
-        |> Enum.map(fn day -> %Date{date | day: day} end)
-        |> Enum.map(&weekday?/1)
-        |> Enum.map(&not/1)
-        |> Enum.all?()
-    }
+    if not weekday?(date), do: %Checks{}, else:
+      %Checks{
+        missing_weekday_save: hours == 0,
+        below_eight_hours: hours < 8.0,
+        missing_friday_submit: not submitted and friday?(date),
+        missing_eom_submit_today: not submitted and date.day == Date.days_in_month(date),
+        missing_eom_submit_soon: not submitted and date.day < Date.days_in_month(date) and
+          (date.day + 1)..Date.days_in_month(date)
+          |> Enum.map(fn day -> %Date{date | day: day} end)
+          |> Enum.map(&weekday?/1)
+          |> Enum.map(&not/1)
+          |> Enum.all?()
+      }
   end
 
   defp weekday?(date), do: Date.day_of_week(date) in 1..5
