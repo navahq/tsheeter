@@ -14,6 +14,14 @@ defmodule Tsheeter.User do
     ]
   end
 
+  defmodule Timesheet do
+    defstruct [
+      :date,
+      saved_hours: 0.0,
+      submitted?: false
+    ]
+  end
+
   @timezone "US/Eastern"
   @renew_secs_before_expiration 60 * 60 * 12    # renew tokens 12 hours before they expire
   @refresh_error_retry_secs 60 * 30             # retry failed refreshes 30 minutes later
@@ -186,7 +194,8 @@ defmodule Tsheeter.User do
       |> Enum.map(fn {_k, v} -> Map.get(v, "duration") end)
       |> Enum.sum()
 
-    result = %{
+    result = %Timesheet{
+      date: today,
       saved_hours: total_time / (60 * 60),
       submitted?: submitted_to >= today
     }
