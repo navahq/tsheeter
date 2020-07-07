@@ -49,3 +49,10 @@ slack_verify_token =
 
 config :tsheeter,
   slack_verify_token: slack_verify_token
+
+slack_bot_token =
+  System.get_env("SLACK_BOT_TOKEN") ||
+    raise "environment variable SLACK_BOT_TOKEN is missing"
+
+config :tsheeter,
+  slack_bot_token: slack_bot_token

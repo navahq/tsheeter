@@ -75,3 +75,6 @@ config :oauth2, debug: true
 
 config :tsheeter,
   slack_verify_token: System.get_env("SLACK_VERIFICATION_TOKEN")
+
+config :tsheeter,
+  slack_bot_token: System.get_env("SLACK_BOT_TOKEN")

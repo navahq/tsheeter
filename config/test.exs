@@ -31,3 +31,6 @@ config :tsheeter, :oauth,
 
 config :tsheeter,
   slack_verify_token: System.get_env("SLACK_VERIFICATION_TOKEN")
+
+config :tsheeter,
+  slack_bot_token: System.get_env("SLACK_BOT_TOKEN")

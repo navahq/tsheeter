@@ -10,7 +10,8 @@ defmodule Tsheeter.User do
       :id,            # this session's identifier to the outside world
       :tsheets_uid,   # tsheets user ID
       :state_token,   # random string used to verify sender during OAuth2 callback
-      :client         # oauth2 client
+      :client,        # oauth2 client
+      :slack_token    # slack bot token
     ]
   end
 
@@ -51,7 +52,8 @@ defmodule Tsheeter.User do
     state = %State{
       id: id,
       state_token: random_string(16),
-      client: client
+      client: client,
+      slack_token: Application.fetch_env!(:tsheeter, :slack_bot_token)
     }
     |> apply_token(token)
 
@@ -97,6 +99,10 @@ defmodule Tsheeter.User do
 
   def forget_token(id) do
     GenServer.cast(via_registry(id), :forget_token)
+  end
+
+  def send_message(id, msg) do
+    GenServer.cast(via_registry(id), {:message, msg})
   end
 
   ### Private functions
@@ -228,6 +234,13 @@ defmodule Tsheeter.User do
     {:noreply, %{state | client: %{state.client | token: nil}}}
   end
 
+  def handle_cast({:message, msg}, %State{id: id, slack_token: slack_token} = state) do
+    Slack.Web.Chat.post_message(id, msg, %{token: slack_token})
+    |> check_error()
+
+    {:noreply, state}
+  end
+
   def handle_info({:token, %Token{slack_uid: id} = token}, %State{id: id} = state) do
     state =
       state
@@ -252,4 +265,10 @@ defmodule Tsheeter.User do
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
+
+  defp check_error(%{"ok" => true} = resp), do: resp
+  defp check_error(%{"ok" => false} = resp) do
+    resp = Jason.encode!(resp, pretty: true)
+    Logger.error("[response] #{resp}")
+  end
 end
