@@ -56,3 +56,20 @@ slack_bot_token =
 
 config :tsheeter,
   slack_bot_token: slack_bot_token
+
+oauth_client_id =
+  System.get_env("OAUTH_CLIENT_ID") ||
+    raise "environment variable OAUTH_CLIENT_ID is missing"
+
+oauth_client_secret =
+  System.get_env("OAUTH_CLIENT_SECRET") ||
+    raise "environment variable OAUTH_CLIENT_SECRET is missing"
+
+config :tsheeter, :oauth,
+  strategy: OAuth2.Strategy.AuthCode,
+  client_id: oauth_client_id,
+  client_secret: oauth_client_secret,
+  redirect_uri: "https://tsheeter.dgoeke.io/oauth",
+  site: "https://rest.tsheets.com",
+  authorize_url: "/api/v1/authorize",
+  token_url: "/api/v1/grant"

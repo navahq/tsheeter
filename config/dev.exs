@@ -78,3 +78,12 @@ config :tsheeter,
 
 config :tsheeter,
   slack_bot_token: System.get_env("SLACK_BOT_TOKEN")
+
+config :tsheeter, :oauth,
+  strategy: OAuth2.Strategy.AuthCode,
+  client_id: System.get_env("OAUTH_CLIENT_ID"),
+  client_secret: System.get_env("OAUTH_CLIENT_SECRET"),
+  redirect_uri: "http://localhost:4000/oauth",
+  site: "https://rest.tsheets.com",
+  authorize_url: "/api/v1/authorize",
+  token_url: "/api/v1/grant"
