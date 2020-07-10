@@ -1,5 +1,3 @@
-![.github/workflows/elixir.yml](https://github.com/dgoeke/tsheeter/workflows/.github/workflows/elixir.yml/badge.svg)
-
 # Tsheeter
 
 To start the server:
