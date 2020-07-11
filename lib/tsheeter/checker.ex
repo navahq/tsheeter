@@ -11,14 +11,12 @@ defmodule Tsheeter.Checker do
   @via_registry {:via, Horde.Registry, {Tsheeter.Registry, __MODULE__}}
 
   @missing_weekday_save_msg     "your timesheet hasn't been saved today."
-  @below_eight_hours_msg        "your timesheet has some data today, but it's less than eight hours."
   @missing_friday_submit_msg    "your timesheet hasn't been submitted (today is Friday)."
   @missing_eom_submit_today_msg "your timesheet hasn't been submitted (today is the last day of the month)."
   @missing_eom_submit_soon_msg  "your timesheet hasn't been submitted (today is the last working day of the month)."
 
   defmodule Checks do
     defstruct missing_weekday_save: false,
-              below_eight_hours: false,
               missing_friday_submit: false,
               missing_eom_submit_today: false,
               missing_eom_submit_soon: false
@@ -89,7 +87,6 @@ defmodule Tsheeter.Checker do
       do: %Checks{},
       else: %Checks{
         missing_weekday_save: hours == 0,
-        below_eight_hours: hours < 8.0,
         missing_friday_submit: not submitted and friday?(date),
         missing_eom_submit_today: not submitted and date.day == Date.days_in_month(date),
         missing_eom_submit_soon:
@@ -120,9 +117,8 @@ defmodule Tsheeter.Checker do
   defp weekday?(date), do: Date.day_of_week(date) in 1..5
   defp friday?(date), do: Date.day_of_week(date) == 5
 
-  defp need_save_msg(%Checks{missing_weekday_save: false, below_eight_hours: false}), do: nil
+  defp need_save_msg(%Checks{missing_weekday_save: false}), do: nil
   defp need_save_msg(%Checks{missing_weekday_save: true}), do: @missing_weekday_save_msg
-  defp need_save_msg(%Checks{below_eight_hours: true}), do: @below_eight_hours_msg
 
   defp need_submit_msg(%Checks{missing_friday_submit: false, missing_eom_submit_today: false, missing_eom_submit_soon: false}), do: nil
   defp need_submit_msg(%Checks{missing_eom_submit_today: true}), do: @missing_eom_submit_today_msg
