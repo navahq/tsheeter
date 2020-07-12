@@ -62,6 +62,7 @@ defmodule Tsheeter.MixProject do
       {:oauth2, "~> 2.0"},
       {:phoenix_live_view, "~> 0.13.2"},
       {:tzdata, "~> 1.0.1"},
+      {:calendar, "~> 1.0.0"},
       {:floki, ">= 0.0.0", only: :test}
     ]
   end

@@ -90,6 +90,12 @@ defmodule Tsheeter.Token do
     t |> DateTime.shift_zone!("UTC") |> DateTime.to_time
   end
 
+  def to_timezone(%Time{hour: hour, minute: minute, second: second, microsecond: microsecond}, timezone) do
+    t = DateTime.utc_now()
+    t = %{ t | hour: hour, minute: minute, microsecond: microsecond, second: second}
+    t |> DateTime.shift_zone!(timezone) |> DateTime.to_time
+  end
+
   def set_check_time(id, time) do
     {1, _} =
       from(t in Token, where: t.slack_uid == ^id)
