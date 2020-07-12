@@ -119,13 +119,13 @@ defmodule Tsheeter.SlackHome do
           type: :section,
           text: %{
             type: :mrkdwn,
-            text: "I'm currently checking your timesheet on weekdays at *#{local_time} #{@timezone}*."
+            text: ":alarm_clock: I'm currently checking your timesheet on weekdays at *#{local_time} #{@timezone}*."
           },
           accessory: %{
             type: :button,
             text: %{
               type: :plain_text,
-              text: "Change it",
+              text: "Change time",
               emoji: true
             },
             value: :change_check_time,
@@ -135,7 +135,7 @@ defmodule Tsheeter.SlackHome do
           type: :section,
           text: %{
             type: :mrkdwn,
-            text: "Your slack profile is currently *connected* to TSheets."
+            text: ":heart: Your slack profile is currently *connected* to TSheets."
           },
           accessory: %{
             type: :button,
@@ -184,17 +184,14 @@ defmodule Tsheeter.SlackHome do
       },
       blocks: [
         intro_block(),
+        %{type: :divider},
         %{
           type: :section,
           text: %{
             type: :mrkdwn,
-            text: "Your slack profile is currently *not connected* to TSheets, so you won't receive any notifications."
-          }
-        },
-        %{
-          type: :actions,
-          elements: [
-            %{
+            text: ":broken_heart: Your slack profile is currently *not connected* to TSheets, so you won't receive any notifications."
+          },
+          accessory: %{
               type: :button,
               text: %{
                 type: :plain_text,
@@ -203,8 +200,7 @@ defmodule Tsheeter.SlackHome do
               },
               url: User.authorize_url(user_id),
               style: :primary
-            }
-          ]
+          }
         }
       ]
     }
@@ -272,7 +268,14 @@ defmodule Tsheeter.SlackHome do
       type: :section,
       text: %{
         type: :mrkdwn,
-        text: "TSheeter is a bot that can connect to your TSheets account and remind you each day if you forget to save your time."
+        text: """
+        *Beep boop!* I'm a bot that can connect to your TSheets account and remind you each day if you forget to save or submit your time. I use these rules:
+
+        1. Every weekday should have time logged.
+        2. Time should be submited on the last work day of each month.
+        3. Time should also be submitted every Friday.
+
+        """
       }
     }
   end
