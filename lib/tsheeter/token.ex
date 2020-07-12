@@ -63,6 +63,8 @@ defmodule Tsheeter.Token do
         set: [access_token: access_token, refresh_token: refresh_token, expires_at: expires_at]
       ],
       conflict_target: :slack_uid)
+
+    get_by_slack_id(slack_uid)
     |> broadcast()
   end
 
