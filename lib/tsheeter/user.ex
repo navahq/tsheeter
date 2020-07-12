@@ -51,7 +51,7 @@ defmodule Tsheeter.User do
 
     state = %State{
       id: id,
-      state_token: random_string(16),
+      state_token: state_token(id),
       client: client,
       slack_token: Application.fetch_env!(:tsheeter, :slack_bot_token)
     }
@@ -121,11 +121,7 @@ defmodule Tsheeter.User do
     end
   end
 
-  defp random_string(length) do
-    :crypto.strong_rand_bytes(length)
-    |> Base.url_encode64
-    |> binary_part(0, length)
-  end
+  defp state_token(id), do: :crypto.hash(:sha256, id) |> Base.url_encode64()
 
   defp apply_token(%State{} = state, nil), do: state
 
