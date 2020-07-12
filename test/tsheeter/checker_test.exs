@@ -29,23 +29,6 @@ defmodule CheckerTest do
     assert not Checker.check_timesheet(ts).missing_weekday_save
   end
 
-  test "below 8 hours" do
-    ts = %Timesheet{} |> with_wednesday()
-    assert Checker.check_timesheet(ts).below_eight_hours
-
-    ts = %Timesheet{} |> with_wednesday() |> with_hours(7.9)
-    assert Checker.check_timesheet(ts).below_eight_hours
-
-    ts = %Timesheet{} |> with_wednesday() |> with_hours(8)
-    assert not Checker.check_timesheet(ts).below_eight_hours
-
-    ts = %Timesheet{} |> with_wednesday() |> with_hours(9.5)
-    assert not Checker.check_timesheet(ts).below_eight_hours
-
-    ts = %Timesheet{} |> with_saturday()
-    assert not Checker.check_timesheet(ts).below_eight_hours
-  end
-
   test "missing friday submit" do
     ts = %Timesheet{} |> with_friday()
     assert Checker.check_timesheet(ts).missing_friday_submit
