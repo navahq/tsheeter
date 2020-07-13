@@ -50,7 +50,8 @@ defmodule Tsheeter.SlackHome do
     case Regex.run(regex, time_str) do
       nil -> nil
       [_, h, m, ampm] ->
-        h = String.to_integer(h)
+        raw_hour = String.to_integer(h)
+        h = if raw_hour == 12, do: 0, else: raw_hour
         m = String.to_integer(m)
         offset = if String.downcase(ampm) == "pm", do: 12, else: 0
         case Time.new(h + offset, m, 0) do
